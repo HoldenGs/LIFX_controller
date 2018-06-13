@@ -51,7 +51,7 @@ if any(c < 1 for c in args.channels):
     parser.error('argument CHANNEL: must be >= 1')
 
 mapping = [c - 1 for c in args.channels]  # Channel numbers start with 1
-q = queue.Queue(64)
+q = queue.LifoQueue()
 
 
 
@@ -80,14 +80,15 @@ def update_lights(hue):
         if max_amp < 1:
             max_amp = 1
         print("amp: {}                 ".format(int(max_amp)), end="\r")
-        bulb_ip = "192.168.1.5"
+        bulb_ip = "192.168.1.4"
         start_index = 0
         end_index = 11
-        sat = 0
+        sat = 50
         kel = 3500
         packet = get_colour_zones_packet(start_index, end_index,
                                         hue, sat, int(max_amp), kel, APPLY, SEQ_NUM)
         sock.sendto(packet, (bulb_ip, UDP_PORT))
+        time.sleep(0.025)
 
 
 
@@ -115,16 +116,16 @@ if len(sys.argv) > 0:
             hue = 0
             add = 1
             while True:
-                # if add:
-                #     hue += 0.00005
-                #     if hue >= 255:
-                #         add = 0
-                #         hue = 255
-                # else:
-                #     hue -= 0.00005
-                #     if hue <= 0:
-                #         add = 1
-                #         hue = 0
+                if add:
+                    hue += 0.00005
+                    if hue >= 255:
+                        add = 0
+                        hue = 255
+                else:
+                    hue -= 0.00005
+                    if hue <= 0:
+                        add = 1
+                        hue = 0
                 update_lights(int(hue))
     except KeyboardInterrupt as e:
         parser.exit(type(e).__name__ + ': ' + str(e))
